@@ -1,0 +1,12 @@
+/target
+/.idea
+/.vscode
+
+# Fuck off so-called "reproducible build"
+Cargo.lock
+
+/work_dir
+
+.DS_Store
+
+*.log

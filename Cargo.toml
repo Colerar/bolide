@@ -1,0 +1,55 @@
+[package]
+name = "bolide"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+opt-level = 3
+strip = "symbols"
+panic = "abort"
+lto = "fat"
+
+[profile.release.package.frankenstein]
+opt-level = "s"
+
+[dependencies]
+anyhow = "1.0"
+reedline = { version = "0.14", features = ["external_printer"] }
+log = "0.4"
+colored = "2.0"
+parking_lot = "0.12"
+chrono = "0.4"
+fern = "0.6"
+shlex = "1.1"
+once_cell = "1.16"
+rustc-hash = "1.1"
+async-trait = "0.1"
+
+lazy_static = "1.4.0"
+
+#form_urlencoded = "1.1"
+#regex = "1"
+#fancy-regex = "0.10"
+
+clap = { version = "4.0", features = ["derive", "cargo", "wrap_help", "env"] }
+clap-verbosity-flag = "2.0"
+
+[dependencies.tokio]
+version = "1.20"
+default-features = false
+features = ["rt-multi-thread", "macros", "parking_lot"]
+
+## Telegram API
+#[dependencies.frankenstein]
+#version = "0.21"
+#default-features = false
+#features = ["async-http-client"]
+#async-stream = "0.3"
+#futures = { version = "0.3" }
+#futures-util = "0.3"
+#serde = { version = "1.0", features = ["derive"] }
+#toml = "0.5"
+#[dependencies.reqwest]
+#version = "0.11"
+#default-features = false
+#features = ["rustls-tls-native-roots", "json", "gzip", "deflate", "socks"]
