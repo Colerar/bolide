@@ -1,37 +1,25 @@
 use log::{error, trace};
-use std::borrow::Cow;
+use std::io::stdin;
 use std::process::exit;
-
-use reedline::{
-  Prompt, PromptEditMode, PromptHistorySearch, PromptHistorySearchStatus, Reedline, Signal,
-};
-
 use std::sync::Arc;
 
 use crate::cmd::Commands;
 use crate::cmd::Sender::Console;
 
-pub async fn handle_line(reader: &mut Reedline, cmds: Arc<Commands>) {
+pub async fn handle_line(cmds: Arc<Commands>) {
   loop {
-    let line = match reader.read_line(&CustomPrompt) {
-      Ok(sig) => match sig {
-        Signal::Success(buffer) => buffer,
-        Signal::CtrlC => {
-          println!("<Interrupted>");
-          continue;
-        },
-        Signal::CtrlD => {
-          println!("\nAborted!");
-          exit(0);
-        },
-      },
+    let Some(line) = stdin().lines().next() else {
+      println!("Ctrl + D, exiting...");
+      exit(0);
+    };
+    let line = match line {
+      Ok(line) => line,
       Err(err) => {
-        println!("{}", err);
+        error!("Failed to readline: {err}");
         continue;
       },
     };
-
-    let args = shlex::split(&line);
+    let args = shlex::split(line.as_str());
     let Some(args) = args else { return };
     if args.is_empty() {
       continue;
@@ -49,42 +37,5 @@ pub async fn handle_line(reader: &mut Reedline, cmds: Arc<Commands>) {
     } else {
       error!("No such command `{}`", args[0])
     }
-  }
-}
-
-#[derive(Clone)]
-pub struct CustomPrompt;
-impl Prompt for CustomPrompt {
-  fn render_prompt_left(&self) -> Cow<str> {
-    {
-      Cow::Borrowed("")
-    }
-  }
-
-  fn render_prompt_right(&self) -> Cow<str> {
-    Cow::Borrowed("")
-  }
-
-  fn render_prompt_indicator(&self, _edit_mode: PromptEditMode) -> Cow<str> {
-    Cow::Owned("> ".to_string())
-  }
-
-  fn render_prompt_multiline_indicator(&self) -> Cow<str> {
-    Cow::Borrowed("::: ")
-  }
-
-  fn render_prompt_history_search_indicator(
-    &self,
-    history_search: PromptHistorySearch,
-  ) -> Cow<str> {
-    let prefix = match history_search.status {
-      PromptHistorySearchStatus::Passing => "",
-      PromptHistorySearchStatus::Failing => "failing ",
-    };
-
-    Cow::Owned(format!(
-      "({}reverse-search: {}) ",
-      prefix, history_search.term
-    ))
   }
 }
