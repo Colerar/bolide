@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap_verbosity_flag::LogLevel;
-use log::{Level, LevelFilter, Record};
+use log::{Level, LevelFilter};
 use log4rs::append::console::ConsoleAppender;
 use log4rs::config::{Appender, Root};
 use log4rs::encode::pattern::PatternEncoder;

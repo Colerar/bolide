@@ -3,22 +3,31 @@ use log::info;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
-use std::path::PathBuf;
+use std::path::Path;
 use std::{fs, process};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all(deserialize = "kebab-case"))]
 pub struct Config {
   #[serde(default = "Default::default")]
-  pub enabled_chats: Vec<String>,
+  pub proxy: Proxy,
   pub telegram: Telegram,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all(deserialize = "kebab-case"))]
+pub struct Proxy {
+  connection: Option<String>,
+  user: Option<String>,
+  password: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all(deserialize = "kebab-case"))]
 pub struct Telegram {
   pub telegram_token: String,
-  pub proxy: Option<String>,
+  #[serde(default = "Default::default")]
+  pub enabled_chats: Vec<String>,
   #[serde(default = "Default::default")]
   pub time: Time,
 }
@@ -39,7 +48,7 @@ impl Default for Time {
   }
 }
 
-pub fn init(path: &PathBuf) -> Result<Config> {
+pub fn init(path: &Path) -> Result<Config> {
   let path = path.join("config.toml");
 
   info!("Initializing config file...");
@@ -57,7 +66,7 @@ pub fn init(path: &PathBuf) -> Result<Config> {
           &path.to_string_lossy()
         )
       })?;
-    let config: Config = toml::from_str(&*config_str)
+    let config: Config = toml::from_str(&config_str)
       .with_context(|| format!("Failed to parse config file: {}", &path.to_string_lossy()))?;
     Ok(config)
   } else if !path.exists() {
@@ -82,7 +91,7 @@ pub fn init(path: &PathBuf) -> Result<Config> {
         )
       })?;
     }
-    info!("Default config writed to {}", &path.to_string_lossy());
+    info!("Default config written to {}", &path.to_string_lossy());
     info!("Please take a look and configure bot, exiting...");
     process::exit(0)
   } else {
