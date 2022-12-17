@@ -1,19 +1,19 @@
-use crate::cmd::version::version_command;
 use anyhow::Context;
 use async_trait::async_trait;
-use clap::Parser;
+use clap::{Parser};
+use frankenstein::{AsyncTelegramApi, ChatId, SendMessageParams};
 use lazy_static::lazy_static;
 use log::{error, info};
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::ffi::OsString;
+use std::sync::Arc;
 
+mod help;
 mod version;
 
-#[derive(Parser, Debug)]
-struct Test {
-  #[arg(short = 'c', long)]
-  target_chat: String,
+lazy_static! {
+  static ref CMDS: Vec<Command> = vec![help::command(), version::command()];
 }
 
 pub struct Command {
@@ -31,23 +31,33 @@ pub trait Runner: Sync + Send {
 #[derive(Debug)]
 pub enum Sender {
   Console,
-  Telegram(),
+  Telegram {
+    api: Arc<frankenstein::AsyncApi>,
+    chat: ChatId,
+  },
 }
 
 impl Sender {
-  async fn send_text(&self, text: Cow<'static, str>) -> anyhow::Result<()> {
+  pub async fn send_text<I>(&self, text: I) -> anyhow::Result<()> where
+     I: Into<Cow<'static, str>> {
     match self {
       Sender::Console => {
-        info!("{}", text);
+        info!("{}", text.into());
       },
-      Sender::Telegram() => unimplemented!("telegram send"),
+      Sender::Telegram { api, chat } => {
+        api
+          .send_message(
+            &SendMessageParams::builder()
+              .text(text.into())
+              .chat_id(chat.clone())
+              .build(),
+          )
+          .await
+          .with_context(|| format!("Failed to send message to chat {chat:?}"))?;
+      },
     }
     Ok(())
   }
-}
-
-lazy_static! {
-  static ref CMDS: Vec<Command> = vec![version_command()];
 }
 
 pub struct Commands {
@@ -71,25 +81,24 @@ impl Default for Commands {
 
 #[async_trait]
 pub trait ParseAndSend: Parser {
-  async fn parse_and_print_err<I, T>(itr: I, sender: &Sender) -> bool
+  async fn parse_print<I, T>(itr: I, sender: &Sender) -> Option<Self>
   where
     I: IntoIterator<Item = T> + Send,
     T: Into<OsString> + Clone,
   {
-    let mut is_err = false;
-    let result = if let Err(err) = Self::try_parse_from(itr) {
-      is_err = true;
-      match sender {
-        Sender::Console => err.print().context("Failed to print err to console"),
-        Sender::Telegram() => sender.send_text(err.render().to_string().into()).await,
-      }
-    } else {
-      Ok(())
-    };
-    if let Err(err) = result {
-      error!("Failed to send send text to sender {sender:?}: {err}");
-    };
-    return is_err;
+    match Self::try_parse_from(itr) {
+      Ok(ok) => Some(ok),
+      Err(err) => {
+        let send_result = match sender {
+          Sender::Console => err.print().context("Failed to print err to console"),
+          Sender::Telegram { .. } => sender.send_text(err.render().to_string()).await,
+        };
+        if let Err(err) = send_result {
+          error!("Failed to send send text to sender {sender:?}: {err}");
+        };
+        None
+      },
+    }
   }
 }
 

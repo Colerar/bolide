@@ -17,15 +17,15 @@ pub struct Config {
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all(deserialize = "kebab-case"))]
 pub struct Proxy {
-  connection: Option<String>,
-  user: Option<String>,
-  password: Option<String>,
+  pub connection: Option<String>,
+  pub user: Option<String>,
+  pub password: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all(deserialize = "kebab-case"))]
 pub struct Telegram {
-  pub telegram_token: String,
+  pub token: String,
   #[serde(default = "Default::default")]
   pub enabled_chats: Vec<String>,
   #[serde(default = "Default::default")]
@@ -35,8 +35,8 @@ pub struct Telegram {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all(deserialize = "kebab-case"))]
 pub struct Time {
-  fetch_delay: u64,
-  failed_delay: u64,
+  pub fetch_delay: u64,
+  pub failed_delay: u64,
 }
 
 impl Default for Time {

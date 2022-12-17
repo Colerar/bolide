@@ -1,12 +1,13 @@
 use log::{error, trace};
 use std::io::stdin;
 use std::process::exit;
-use std::sync::Arc;
 
-use crate::cmd::Commands;
+
+
 use crate::cmd::Sender::Console;
+use crate::COMMANDS;
 
-pub async fn handle_line(cmds: Arc<Commands>) {
+pub async fn handle_line() {
   loop {
     let Some(line) = stdin().lines().next() else {
       println!("Ctrl + D, exiting...");
@@ -26,10 +27,10 @@ pub async fn handle_line(cmds: Arc<Commands>) {
     }
     trace!("{:?}", &args);
     let sender = Console;
-    if let Some(cmd) = cmds
+    if let Some(cmd) = COMMANDS
       .key_map
       .get(args[0].as_str())
-      .or_else(|| cmds.alias_map.get(args[0].as_str()))
+      .or_else(|| COMMANDS.alias_map.get(args[0].as_str()))
     {
       if let Err(err) = cmd.runner.run(args, &sender).await {
         error!("Error during executing command {}: {err}", cmd.name)

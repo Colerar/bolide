@@ -3,7 +3,7 @@ use anyhow::Context;
 use async_trait::async_trait;
 use clap::Parser;
 
-pub fn version_command() -> Command {
+pub fn command() -> Command {
   Command {
     name: "version",
     alias: Vec::new(),
@@ -23,11 +23,11 @@ const fn version_str() -> &'static str {
 #[async_trait]
 impl Runner for Version {
   async fn run(&self, args: Vec<String>, sender: &Sender) -> anyhow::Result<()> {
-    if VersionOpts::parse_and_print_err(args, sender).await {
+    if VersionOpts::parse_print(args, sender).await.is_none() {
       return Ok(());
     };
     sender
-      .send_text(version_str().into())
+      .send_text(version_str())
       .await
       .with_context(|| format!("Failed to send command message to {:?}", sender))
   }

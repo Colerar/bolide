@@ -11,6 +11,6 @@
 
 [telegram]
 # Your telegram token, get from @BotFather
-telegram-token = "139282332:fake_tokenlI_dAF41rNfFsaaa2EJvwi7qL91"
+token = "139282332:fake_tokenlI_dAF41rNfFsaaa2EJvwi7qL91"
 # Enabled groups, either name or id are supported
 enabled-chats = ["group_name", "-10011231232"]
